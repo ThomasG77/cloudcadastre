@@ -4,6 +4,7 @@ import argparse
 import concurrent.futures
 import subprocess
 from pathlib import Path
+import zipfile
 
 
 def process_shapefile(shp_file, overwrite=False):
@@ -18,8 +19,21 @@ def process_shapefile(shp_file, overwrite=False):
         tuple: (succès (bool), nom du fichier (str), message (str))
     """
     # Extraction du chemin et du nom de fichier sans extension
-    path = os.path.dirname(shp_file)
-    filename = os.path.splitext(os.path.basename(shp_file))[0]
+    if 'shp.zip' in shp_file:
+        zip = zipfile.ZipFile(shp_file)
+        shps_within_zip = [i for i in zip.namelist() if i.endswith('.shp')]
+        filename = os.path.splitext(os.path.basename(shps_within_zip[0]))[0]
+        if len(shps_within_zip) == 1:
+            path = os.path.dirname(shp_file)
+            shp_file = '/vsizip/' + shp_file + '/' + shps_within_zip[0]
+        else:
+            message = f"Le fichier en entrée ne contient pas de shp ou plusieurs shp"
+            print(message)
+            return False, filename, message
+
+    else:
+        filename = os.path.splitext(os.path.basename(shp_file))[0]
+        path = os.path.dirname(shp_file)
     output_file = os.path.join(path, f"{filename}.parquet")
     
     # Vérifier si le fichier de sortie existe déjà
@@ -37,7 +51,7 @@ def process_shapefile(shp_file, overwrite=False):
         cmd += '-overwrite '
     
     # Ajouter l'ordre des arguments en plaçant le fichier de sortie en premier, puis les options, puis le fichier d'entrée
-    cmd += f'-f PARQUET "{path}\\{filename}.parquet" "{path}\\{filename}.shp" -nln {filename} -dsco COMPRESSION=ZSTD'
+    cmd += f'-f PARQUET "{output_file}" "{shp_file}" -nln {filename} -dsco COMPRESSION=ZSTD'
     
     print(f"Traitement de {shp_file}")
     print(f"Exécution de la commande: {cmd}")
@@ -55,7 +69,6 @@ def process_shapefile(shp_file, overwrite=False):
         print(f"Erreur: {result.stderr}")
         return False, filename, message
 
-
 def find_shapefiles(root_dir):
     """
     Recherche récursivement tous les fichiers .shp dans l'arborescence.
@@ -67,14 +80,14 @@ def find_shapefiles(root_dir):
         list: Liste des chemins complets vers les fichiers .shp trouvés
     """
     # Utilisation de glob avec le pattern ** pour la recherche récursive
-    shp_files = glob.glob(os.path.join(root_dir, "**", "*.shp"), recursive=True)
+    shp_files = glob.glob(os.path.join(root_dir, "**", "*.shp"), recursive=True) +  glob.glob(os.path.join(root_dir, "**", "*shp.zip"), recursive=True)
     
     # Alternative avec os.walk() si glob pose problème
     if not shp_files:
         shp_files = []
         for root, dirs, files in os.walk(root_dir):
             for file in files:
-                if file.lower().endswith('.shp'):
+                if file.lower().endswith('.shp') or file.lower().endswith('.shp.zip'):
                     shp_files.append(os.path.join(root, file))
     
     return shp_files
