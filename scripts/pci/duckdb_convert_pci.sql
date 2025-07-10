@@ -16,6 +16,8 @@ LOAD spatial;
 import des fichiers Parquet
 ajout des colonnes millesimes, departement, commune et type_objet
 tri par département et commune
+
+la valeur 97 permet de traiter spécifiquement les DROM-COM
 */
 
 CREATE TABLE communes AS 
