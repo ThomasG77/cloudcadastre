@@ -7,7 +7,7 @@ from pathlib import Path
 import zipfile
 
 
-def process_shapefile(shp_file, overwrite=False):
+def process_shapefile(shp_file, overwrite=False, optionsgdal=''):
     """
     Traite un fichier shapefile en le convertissant au format PARQUET.
     
@@ -22,11 +22,12 @@ def process_shapefile(shp_file, overwrite=False):
     if 'shp.zip' in shp_file:
         zip = zipfile.ZipFile(shp_file)
         shps_within_zip = [i for i in zip.namelist() if i.endswith('.shp')]
-        filename = os.path.splitext(os.path.basename(shps_within_zip[0]))[0]
         if len(shps_within_zip) == 1:
             path = os.path.dirname(shp_file)
+            filename = os.path.splitext(os.path.basename(shps_within_zip[0]))[0]
             shp_file = '/vsizip/' + shp_file + '/' + shps_within_zip[0]
         else:
+            filename = os.path.splitext(os.path.basename(shp_file))[0]
             message = f"Le fichier en entrée ne contient pas de shp ou plusieurs shp"
             print(message)
             return False, filename, message
@@ -51,7 +52,7 @@ def process_shapefile(shp_file, overwrite=False):
         cmd += '-overwrite '
     
     # Ajouter l'ordre des arguments en plaçant le fichier de sortie en premier, puis les options, puis le fichier d'entrée
-    cmd += f'-f PARQUET "{output_file}" "{shp_file}" -nln {filename} -dsco COMPRESSION=ZSTD'
+    cmd += f'-f PARQUET "{output_file}" "{shp_file}" -nln {filename} -dsco COMPRESSION=ZSTD ' + optionsgdal
     
     print(f"Traitement de {shp_file}")
     print(f"Exécution de la commande: {cmd}")
@@ -98,6 +99,7 @@ def main():
     parser.add_argument('--root', required=True, help='Dossier racine à parcourir')
     parser.add_argument('--workers', type=int, default=4, help='Nombre de processus parallèles')
     parser.add_argument('--overwrite', action='store_true', help='Écrase les fichiers .parquet existants')
+    parser.add_argument('--optionsgdal', required=False, help='Options GDAL à passer à ogr2ogr')
     args = parser.parse_args()
     
     # S'assurer que le chemin existe
@@ -117,7 +119,7 @@ def main():
     
     # Traitement parallèle des fichiers
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
-        futures = {executor.submit(process_shapefile, shp_file, args.overwrite): shp_file for shp_file in shp_files}
+        futures = {executor.submit(process_shapefile, shp_file, args.overwrite, args.optionsgdal): shp_file for shp_file in shp_files}
         
         success_count = 0
         fail_count = 0

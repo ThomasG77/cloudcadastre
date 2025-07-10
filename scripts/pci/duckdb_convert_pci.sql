@@ -3,8 +3,8 @@
 
 SET memory_limit = '16GB';
 SET max_temp_directory_size = '125GB';
-SET VARIABLE my_workspace = 'D:\Users\jrmorreale\Documents\SIG\DGFIP\cloudcadastre';
-SET VARIABLE millesime = '2025-04-01'
+SET VARIABLE my_workspace = '/srv/cadastre/etalab-cadastre/etalab-cadastre/shp/departements/';
+SET VARIABLE millesime = '2025-04-01';
 SET file_search_path = getvariable('my_workspace');
 
 INSTALL spatial;
@@ -20,27 +20,27 @@ tri par département et commune
 
 CREATE TABLE communes AS 
 SELECT getvariable('millesime') AS "millesime", CASE WHEN left(id, 2)::VARCHAR != '97' THEN left(id, 2) WHEN left(id, 2)::VARCHAR = '97' THEN left(id, 3) END AS "departement", "id" AS "commune", 'communes' AS "type_objet", * 
-FROM read_parquet(getvariable('my_workspace') || '\donnees\**\communes.parquet') 
+FROM read_parquet(getvariable('my_workspace') || '/**/communes.parquet') 
 ORDER BY "departement", "commune";
 
 CREATE TABLE feuilles AS 
 SELECT getvariable('millesime') AS "millesime", CASE WHEN left(commune, 2)::VARCHAR != '97' THEN left(commune, 2) WHEN left(commune, 2)::VARCHAR = '97' THEN left(commune, 3) END AS "departement", 'feuilles' AS "type_objet", * 
-FROM read_parquet(getvariable('my_workspace') || '\donnees\**\feuilles.parquet') 
+FROM read_parquet(getvariable('my_workspace') || '/**/feuilles.parquet') 
 ORDER BY "departement", "commune";
 
 CREATE TABLE lieux_dits AS 
 SELECT getvariable('millesime') AS "millesime", CASE WHEN left(commune, 2)::VARCHAR != '97' THEN left(commune, 2) WHEN left(commune, 2)::VARCHAR = '97' THEN left(commune, 3) END AS "departement", 'lieux_dits' AS "type_objet", * 
-FROM read_parquet(getvariable('my_workspace') || '\donnees\**\lieux_dits.parquet') 
+FROM read_parquet(getvariable('my_workspace') || '/**/lieux_dits.parquet') 
 ORDER BY "departement", "commune";
 
 CREATE TABLE prefixes_sections AS 
 SELECT getvariable('millesime') AS "millesime", CASE WHEN left(commune, 2)::VARCHAR != '97' THEN left(commune, 2) WHEN left(commune, 2)::VARCHAR = '97' THEN left(commune, 3) END AS "departement", 'prefixes_sections' AS "type_objet", * 
-FROM read_parquet(getvariable('my_workspace') || '\donnees\**\prefixes_sections.parquet') 
+FROM read_parquet(getvariable('my_workspace') || '/**/prefixes_sections.parquet') 
 ORDER BY "departement", "commune";
 
 CREATE TABLE sections AS 
 SELECT getvariable('millesime') AS "millesime", CASE WHEN left(commune, 2)::VARCHAR != '97' THEN left(commune, 2) WHEN left(commune, 2)::VARCHAR = '97' THEN left(commune, 3) END AS "departement", 'sections' AS "type_objet", * 
-FROM read_parquet(getvariable('my_workspace') || '\donnees\**\sections.parquet') 
+FROM read_parquet(getvariable('my_workspace') || '/**/sections.parquet') 
 ORDER BY "departement", "commune";
 
 CREATE TABLE subdivisions_fiscales AS
@@ -49,7 +49,7 @@ SELECT
 	CASE WHEN left(parcelle, 2)::VARCHAR != '97' THEN left(parcelle, 2) WHEN left(parcelle, 2)::VARCHAR = '97' THEN left(parcelle, 3) END AS "departement", 
 	left(parcelle, 5) AS "commune", 'subdivisions_fiscales' AS "type_objet",
 	* 
-FROM read_parquet(getvariable('my_workspace') || '\donnees\**\subdivisions_fiscales.parquet')
+FROM read_parquet(getvariable('my_workspace') || '/**/subdivisions_fiscales.parquet')
 WHERE parcelle IS NOT NULL
 ORDER BY "departement", "commune";
 
@@ -59,7 +59,7 @@ SELECT
 	getvariable('millesime') AS "millesime", 
 	'000' AS "departement", '00000' AS "commune", 
 	'subdivisions_fiscales' AS "type_objet", * 
-FROM read_parquet(getvariable('my_workspace') || '\donnees\**\subdivisions_fiscales.parquet')
+FROM read_parquet(getvariable('my_workspace') || '/**/subdivisions_fiscales.parquet')
 WHERE parcelle IS NULL;
 
 /*
@@ -84,7 +84,7 @@ SELECT
 		END AS "departement",
 	'batiments' AS "type_objet",
 	* 
-FROM read_parquet(getvariable('my_workspace') || '\donnees\**\batiments.parquet');
+FROM read_parquet(getvariable('my_workspace') || '/**/batiments.parquet');
 
 CREATE TABLE parcelles AS
 SELECT 
@@ -94,7 +94,7 @@ SELECT
 		WHEN left(commune, 2)::VARCHAR = '97' THEN left(commune, 3) 
 		END AS "departement", 
 	'parcelles' AS "type_objet", * 
-FROM read_parquet(getvariable('my_workspace') || '\donnees\**\parcelles.parquet');
+FROM read_parquet(getvariable('my_workspace') || '/**/parcelles.parquet');
 
 -- vue offrant un accès unifié à toutes les tables d'importation
 CREATE OR REPLACE VIEW source_union AS
