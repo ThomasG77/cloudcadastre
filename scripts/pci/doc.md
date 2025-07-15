@@ -35,7 +35,7 @@ export PATH='/root/.duckdb/cli/latest':$PATH
 cd /srv/
 git clone https://github.com/Jean-Roc/cloudcadastre.git
 cd cloudcadastre/scripts/pci
-python convert_shp_to_parquet.py --root /srv/cadastre/etalab-cadastre/etalab-cadastre/shp/departements/ --optionsgdal '-oo ENCODING=ISO8859-1'
+python convert_shp_to_parquet.py --root /srv/cadastre/etalab-cadastre/etalab-cadastre/shp/departements/ --optionsgdal '-oo ENCODING=ISO8859-1 -makevalid'
 duckdb < duckdb_convert_pci.sql cadastre.duckdb
 python duckdb_export_pci.py
 ```
