@@ -3,6 +3,8 @@ import duckdb
 
 my_workspace = '/srv/cloudcadastre'
 
+pragma_limit = ["PRAGMA memory_limit='20GB'"]
+
 output_parquet_chunks = [f'''
 COPY (
 	SELECT * FROM source_unique WHERE departement IN ('2A', '2B')
@@ -65,7 +67,7 @@ COPY (
 	TO '{my_workspace}/cadastre.parquet' (FORMAT parquet, COMPRESSION zstd);
 ''']
 
-sql_statements = output_parquet_chunks + group_parquet_query
+sql_statements = pragma_limit + output_parquet_chunks + group_parquet_query
 #sql_statements = group_parquet_query
 
 start_time = datetime.now()
